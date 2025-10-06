@@ -85,11 +85,22 @@ func main() {
 
 func collectURLs() []string {
 	var urls []string
+
+	// 1) Read from environment variable URLS (comma-separated list).
+	// Example (PowerShell): $env:URLS="https://a.com,https://b.com"
+	// Example (bash): export URLS="https://a.com,https://b.com"
+	// We trim whitespace and then split on commas via splitCSV.
 	if s := strings.TrimSpace(os.Getenv("URLS")); s != "" {
 		urls = append(urls, splitCSV(s)...)
 	}
+
+	// 2) Optionally read from STDIN if input is piped.
+	// We detect piped input by checking whether STDIN is a character device
+	// (interactive terminal) or not. When you pipe data (e.g., `Get-Content urls.txt | go run ...`)
+	// STDIN is NOT a terminal, so we proceed to read lines.
 	stat, _ := os.Stdin.Stat()
-	if (stat.Mode() & os.ModeCharDevice) == 0 { // piped input
+	if (stat.Mode() & os.ModeCharDevice) == 0 { // piped input detected
+		// Read one URL per line. Empty lines and surrounding whitespace are ignored.
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			line := strings.TrimSpace(scanner.Text())
@@ -97,7 +108,11 @@ func collectURLs() []string {
 				urls = append(urls, line)
 			}
 		}
+		// Note: scanner.Err() is intentionally ignored for simplicity; in a real
+		// tool you might log or handle a read error here.
 	}
+
+	// Order: env var URLs first, then any piped URLs. No deduplication is performed.
 	return urls
 }
 
