@@ -1,0 +1,10 @@
+https://dummyimage.com/600x400/000/fff
+https://dummyimage.com/600x500/000/fff
+https://dummyimage.com/600x600/000/fff
+https://www.jobleads.com/search/jobs
+https://www.reddit.com/r/webscraping/comments/13zjyoq/any_good_websites_that_allow_web_crawling/
+https://web-scraping.dev/
+https://example.com
+https://httpbin.org/get
+https://httpbin.org/bytes/102400
+https://httpbin.org/delay/2

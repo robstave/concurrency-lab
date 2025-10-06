@@ -82,7 +82,7 @@ printf "%s\n" \
 
 From a file:
 ```bash
-cat urls.txt | go run ./cmd/crawler --concurrency 20 --rate 5 --timeout 5s --error-threshold 3
+cat sites.txt | go run ./cmd/crawler --concurrency 20 --rate 5 --timeout 5s --error-threshold 3
 ```
 
 ## Related synchronization concepts
