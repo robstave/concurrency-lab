@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"math/rand"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"example.com/project-bucket/internal/emitter"
@@ -34,26 +36,40 @@ func main() {
 
 	ctx := context.Background()
 	start := time.Now()
-	var produced int
 
-	for anEvent := range emitChan {
+	// Start 3 workers that consume from emitChan concurrently.
+	const workerCount = 3
+	var processed int64
+	var wg sync.WaitGroup
+	for i := 1; i <= workerCount; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for ev := range emitChan {
+				begin := ev.Timestamp.Sub(start).Milliseconds()
+				if err := bucket.Wait(ctx); err != nil {
+					log.Errorw("wait error", "err", err)
+					return
+				}
 
-		produced++
+				end := time.Since(start).Milliseconds()
+				delay := end - begin
+				count := atomic.AddInt64(&processed, 1)
 
-		begin := anEvent.Timestamp.Sub(start).Milliseconds()
-		if err := bucket.Wait(ctx); err != nil {
-			log.Errorw("wait error", "err", err)
-			break
-		}
+				c := getPaletteColor(int(delay))
+				c.Printf("worker=%d emit t=%4dms processed t=%4dms delay t=%2dms batch=%d produced=%d \n", id, begin, end, delay, ev.BatchSize, count)
+			}
+		}(i)
+		//go func(id int) { defer wg.Done(); ... }(i) is good and idiomatic.
+		// I mean...you could pass in the wg here too, but only if its NOT copied to a new goroutine.
+		//go func(id int, wg *sync.WaitGroup)  if your worried about that.
 
-		end := time.Since(start).Milliseconds()
-		delay := end - begin
-
-		c := getPaletteColor(int(delay))
-		c.Printf("emit t=%4dms processd t=%4dms delay t=%2dms batch=%d produced=%d \n", begin, end, delay, anEvent.BatchSize, produced)
 	}
 
-	log.Infow("bucket demo finished", "produced", produced, "elapsed_ms", time.Since(start).Milliseconds())
+	// Wait for all workers to finish once the emitter closes the channel.
+	wg.Wait()
+
+	log.Infow("bucket demo finished", "produced", atomic.LoadInt64(&processed), "elapsed_ms", time.Since(start).Milliseconds())
 }
 
 func getPaletteColor(delay int) *color.Color {

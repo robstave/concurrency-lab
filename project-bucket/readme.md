@@ -26,10 +26,10 @@ How it works
 - internal/ratelimit/bucket.go implements a simple token bucket with explicit burst and interval
 - cmd/bucket-demo emits batches every 50ms for ~1s, with this distribution:
   - 60%: 1 event
-  - 10%: 2 events
   - 10%: 3 events
-  - 10%: 4 events
   - 10%: 5 events
+  - 10%: 6 events
+  - 10%: 8 events
 - The consumer calls bucket.Wait(ctx) per event, which enforces the rate and allows short bursts up to 3
 
 Notes
