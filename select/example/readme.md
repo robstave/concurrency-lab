@@ -1,50 +1,35 @@
-Select basics: non-blocking cases
-=================================
+# Select statements (Basics)
 
-This example demonstrates basic `select` usage with a buffered channel and
-the `default` case to make non-blocking receive/send operations.
+## Overview
 
-What it shows
--------------
-- A non-blocking receive: if the channel has no value ready, the `default`
-	branch runs ("no message received yet").
-- Sending then receiving from a buffered channel: once a value is placed into
-	the buffer, a subsequent non-blocking receive can get it.
-- A non-blocking send: attempting to send to a full buffered channel will
-	take the `default` branch ("channel full, couldn’t send").
+This example demonstrates non-blocking channel operations in Go using the `select` statement paired with a `default` case.
 
-Walkthrough
------------
-1) `ch := make(chan string, 1)` creates a buffered channel with capacity 1.
-2) First `select` tries to receive immediately; since no value is present,
-	 it hits `default`.
-3) We send `"hello"` into `ch`, then a second `select` receives it.
-4) For `ch2`, we pre-fill the buffer with `"first"`, then a non-blocking send
-	 fails because the buffer is full (takes `default`).
-5) After reading from `ch2`, the buffer frees up and a non-blocking send of
-	 `"second"` now succeeds.
+## Concepts
 
-Run it
-------
+### The select keyword
+The `select` statement lets a goroutine wait on multiple communication operations. 
+It blocks until one of its `case` statements (which must be a complete channel operation) can proceed.
 
-From the repo root or this folder:
+### Non-blocking operations
+If you try to read from an unbuffered channel and no data is ready, your goroutine will block. However, sometimes you want to "attempt" a read, and if nothing is there, immediately do something else without waiting.
+This is achieved by adding a `default:` case to a `select` block.
+- If data is available immediately: the `case val := <-ch:` branch executes.
+- If data is NOT available immediately: the `default:` branch executes. 
+- There is no waiting.
 
-```
-go run ./select/example
+```go
+select {
+case val := <-ch:
+    fmt.Println("Received:", val)
+default:
+    fmt.Println("Nothing received, moving on!")
+}
 ```
 
-You should see output along these lines:
+This pattern is fundamental for implementing polling or busy-wait loops safely.
 
+## Running the Exercise
+
+```bash
+go run .
 ```
-no message received yet
-received: hello
-channel full, couldn’t send
-received: first
-sent second
-received: second
-```
-
-
-see also https://go.dev/play/p/cSKPrxc5UZ6
-
-

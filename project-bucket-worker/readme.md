@@ -1,38 +1,24 @@
-# project-bucket-worker
+# Project: Bucket Limiters + Workers
 
-A small Go demo showing a token-bucket rate limiter driving a pool of workers.
+## Overview
 
-What it shows
-- Burst allowance: up to 3 immediate events
-- Steady rate: ~1 token every 5ms
-- Three concurrent workers, each adding a 10ms processing delay per item
-- Producer bursts (batches every 50ms), consumer side is smoothed by the bucket and parallelism
+This directory provides an advanced self-contained project that connects a Token-Bucket rate limiter directly into a concurrent worker pool.
 
-Run (Windows PowerShell)
-```powershell
-# from repository root
-cd project-bucket-worker
+## Concepts
 
-# run
-go run ./cmd/bucket-demo
-```
+### The Goal
+Building on the prior project, simply throttling a main execution loop is not enough. In a microservices or distributed job processing architecture, you typically have dozens of independent worker goroutines pulling from a common work queue simultaneously.
 
-Run (bash/WSL)
+### The Challenge
+If you have 10 workers independently making HTTP requests to an external API (which only allows 5 requests per second), how do you ensure the 10 workers don't collectively exceed the limit?
+
+### The Solution: Shared Limiter
+We create a single `rate.Limiter` and pass it to every worker goroutine. 
+Inside the worker's processing loop, before they perform the restricted action (e.g., the HTTP call), they call `limiter.Wait(ctx)`.
+This call is thread-safe. If multiple workers request a token simultaneously, the rate limiter queues them and ensures the global frequency limit is respected without any of the workers "clipping" or overstepping. This provides graceful wait times across the entire worker fleet.
+
+## Running the Project
+
 ```bash
-cd project-bucket-worker
-go run ./cmd/bucket-demo
+go run .
 ```
-
-How it works
-- `internal/ratelimit/bucket.go` implements a token bucket with explicit burst and refill interval
-- `cmd/bucket-demo` emits batches every 50ms for ~1s, with this distribution:
-  - 60%: 1 event
-  - 10%: 3 events
-  - 10%: 5 events
-  - 10%: 6 events
-  - 10%: 8 events
-- Three workers read from the emitter channel concurrently; each item waits for a bucket token and then sleeps 10ms to simulate work
-
-Notes
-- The bucket pre-fills to its burst capacity so the first batch can burst instantly.
-- Logs include worker id, timings, and running count so you can observe smoothing and concurrency.

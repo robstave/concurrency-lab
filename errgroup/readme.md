@@ -1,30 +1,25 @@
-Errgroup demo
-==============
+# Error Groups (errgroup)
 
-This example shows how to use golang.org/x/sync/errgroup to run several goroutines
-and propagate the first error while cancelling the remaining work via context.
+## Overview
 
-What it does
-------------
-- Starts three goroutines with an errgroup and a derived context.
-- One goroutine returns an error after ~200ms.
-- Another goroutine sleeps longer and would succeed if not cancelled.
-- The third goroutine represents longer work and will be cancelled when the
-  first error occurs.
+This directory demonstrates using `golang.org/x/sync/errgroup` to run a group of goroutines collectively, propagate any errors that occur, and cancel the entire group via a shared context.
 
-Run
----
-From the `errgroup/` folder:
+## Concepts
 
-```
-go run ./cmd/eg-demo
-```
+When you fan out work to multiple goroutines using a standard `sync.WaitGroup`, handling errors and fast failure can become messy. You typically have to set up your own error channels, mutex-protected variables, and pass context cancellation manually to stop remaining workers if one fails.
 
-Expected output (order may vary, but you should see the error printed and
-worker3 cancelled):
+**`errgroup.Group`** streamlines this pattern.
 
-```
-worker2 failed
-worker3 cancelled
-errgroup finished with error: worker2 failed
+### Features:
+1. **Simplified waiting**: Similar to a WaitGroup, but easier. You call `g.Go(func() error { ... })` and then `err := g.Wait()`.
+2. **Error propagation**: `g.Wait()` returns the *first* non-nil error returned by any of the goroutines.
+3. **Context cancellation (Fail Fast)**: By creating the group with `errgroup.WithContext(ctx)`, the shared context is automatically canceled as soon as *any* goroutine returns an error. The other goroutines can watch `ctx.Done()` and cleanly stop working, preventing wasted resources.
+
+### When to use:
+- Running multiple independent sub-tasks that make up a single HTTP request (e.g., fetching user profile, settings, and friends list concurrently). Wait for all to finish, but fail the whole request immediately if one database call fails.
+
+## Running the Exercise
+
+```bash
+go run .
 ```
