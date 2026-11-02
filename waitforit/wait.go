@@ -21,7 +21,7 @@ func main() {
 	workerCount := 3
 
 	// Start the worker goroutines.
-	for i := 0; i < workerCount; i++ {
+	for i := range workerCount {
 		wg.Add(1) // Increment the counter for each worker.
 		go worker(i, &wg)
 	}
