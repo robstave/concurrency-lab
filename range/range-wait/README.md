@@ -22,3 +22,20 @@ Here, a background goroutine fills a buffered channel with values and, important
 ```bash
 go run .
 ```
+## Results
+
+```
+Tally: 0
+Tally: 1
+Tally: 3
+Tally: 6
+Tally: 10
+Tally: 15
+Tally: 21
+Tally: 28
+Tally: 36
+Tally: 45
+
+Sum of numbers: 55
+
+```

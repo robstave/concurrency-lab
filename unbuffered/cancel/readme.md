@@ -102,3 +102,38 @@ go run main.go
 ```
 
 You'll see the timeout occur, and note the warning about the orphaned goroutine. This demonstrates why proper cancellation is critical in real systems.
+
+```
+=== Unbuffered Channel with Timeout Example ===
+
+Main: Sending task to worker...
+      (Worker takes 2 seconds, but we timeout after 1 second)
+Main: Task sent to worker
+Worker 1: Processing 'Process Large File' (this will take 2 seconds)...
+Main: ERROR - timeout: worker did not complete task in time
+
+Main: Note - worker is stuck trying to send result on doneChan
+      because we timed out and stopped listening
+
+Main: In a real system, you'd need proper cancellation
+      (context.Context, done channels, etc.)
+
+Main: Exiting (worker goroutine will be orphaned)
+```
+
+## Tests
+
+From this directory, run the standalone files explicitly (there is no Go module):
+
+```bash
+go test -v -timeout 20s main.go main_test.go
+```
+
+The tests cover an unaccepted request timing out, a successful reply using a fast
+test peer, the real worker's processing timeout, the next request being blocked
+by the abandoned result, idle shutdown, and shutdown waiting for an unread result.
+The real worker always takes two seconds, longer than the one-second reply timeout.
+
+These tests verify the intentional failure behavior rather than adding cancellation
+to the example. They drain abandoned results and complete the shutdown handshake
+during cleanup, so the test run does not leave the demonstration workers blocked.

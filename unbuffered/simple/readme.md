@@ -39,3 +39,11 @@ go run main.go
 
 You'll see the messages interleave, showing how the send and receive operations synchronize.
  
+```
+Goroutine: About to send message...
+Main: About to receive message...
+Main: Received: Hello from goroutine!
+Goroutine: Message sent!
+
+[Done] exited with code=0 in 3.167 seconds
+```

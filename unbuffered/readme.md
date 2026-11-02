@@ -72,6 +72,41 @@ A **realistic, production-like pattern** showing a daemon that:
 
 ---
 
+### 6. [owner](owner/) - One Goroutine Owns Shared State
+**Concept**: Serialize state changes through request/reply handshakes
+
+Three concurrent clients update a counter owned by one goroutine. Each request
+has its own unbuffered reply channel. Caller cancellation releases abandoned
+replies, and a completion channel lets main join the owner during shutdown.
+
+**Key Takeaway**: Owning state in one goroutine avoids concurrent access to that
+state. Cancellation after an update does not undo the update.
+
+---
+
+### 7. [pipeline](pipeline/) - Backpressure and Early Exit
+**Concept**: Slow consumers make upstream stages wait
+
+A producer sends numbers to a squaring stage and then a slow consumer. Run the
+whole pipeline, then stop a second run early and cancel its blocked stages.
+
+**Key Takeaway**: Unbuffered channels limit queued work, but stopping a consumer
+requires cancellation to release upstream sends. Join every stage before returning.
+
+---
+
+### 8. [first-result](first-result/) - Race Searches and Cancel Losers
+**Concept**: First successful response wins
+
+Several simulated searches share an unbuffered results channel. Ignore a quick
+failure, accept a success, then cancel and join the remaining workers. Also handle
+all-failed searches and parent cancellation.
+
+**Key Takeaway**: Losing workers need cancellation-aware sends after the receiver
+stops listening. Cancel before waiting for workers to finish.
+
+---
+
 ## The Progression
 
 These examples build on each other:
@@ -81,6 +116,9 @@ These examples build on each other:
 3. **cancel**: Here's select with timeouts (powerful! but broken)
 4. **context**: Here's the proper way to do it
 5. **daemon**: Here's how it all comes together in a real service
+6. **owner**: Coordinate concurrent callers around privately owned state
+7. **pipeline**: Propagate backpressure and cancel upstream on early exit
+8. **first-result**: Race workers and clean up results you no longer need
 
 ## When to Actually Use Unbuffered Channels
 
@@ -129,7 +167,7 @@ Based on these examples, use unbuffered channels when:
 
 These examples intentionally omit some important topics:
 - Buffered channels (different tradeoffs)
-- Channel closing and range loops
+- More advanced channel closing patterns (basic stage closure is shown in pipeline)
 - Fan-out/fan-in patterns (see other directories)
 - Worker pools with sync.WaitGroup
 - Error handling and recovery
@@ -139,9 +177,18 @@ These examples intentionally omit some important topics:
 Each subdirectory has its own `main.go` and `readme.md`. Navigate to any example and run:
 
 ```bash
-cd simple        # or advanced, cancel, context, daemon
+cd simple        # or advanced, cancel, context, daemon, owner, pipeline, first-result
 go run main.go
 ```
+
+The three newer examples (`owner`, `pipeline`, and `first-result`) also include
+focused concurrency tests. Inside any of those directories, run:
+
+```bash
+go test -timeout 20s main.go main_test.go
+```
+
+Name the files explicitly because these examples do not have a `go.mod`.
 
 ## The Honest Truth
 
@@ -166,6 +213,8 @@ But understanding these basic patterns is essential before building those real s
 3. See [cancel](cancel/) to understand the timeout problem
 4. Study [context](context/) to learn the proper solution
 5. Finish with [daemon](daemon/) to see it all together in a realistic pattern
+6. Explore [owner](owner/), [pipeline](pipeline/), and [first-result](first-result/)
+   for shared state, backpressure, and competing workers
 
 ### For Building Real Services
 If you just want to see production patterns, jump straight to [daemon](daemon/) - but you'll get more from it if you understand the progression.

@@ -16,6 +16,8 @@ func main() {
 		results <- n // Send each number to the results channel.
 	}
 
+	// if this was unbuffered, sending to the channel would block until a receiver was ready
+
 	// Close the results channel to signal no more data.
 	// If you comment out the close below, the program will deadlock
 	// because the range loop will wait indefinitely for more data.

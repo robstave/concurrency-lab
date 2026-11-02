@@ -75,7 +75,8 @@ func (w *Worker) Shutdown() {
 }
 
 func main() {
-	fmt.Println("=== Unbuffered Channel with Timeout Example ===\n")
+	fmt.Println("=== Unbuffered Channel with Timeout Example ===")
+	fmt.Println()
 
 	// Create and start worker
 	worker := NewWorker(1)

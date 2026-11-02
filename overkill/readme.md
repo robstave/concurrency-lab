@@ -7,7 +7,7 @@ This exercise features a concurrent worker-pool FizzBuzz implementation that agg
 ## Concepts
 
 ### The Exercise
-FizzBuzz is traditionally a simple loop. Implementing it concurrently is usually "overkill," but serves as an excellent sandbox to learn advanced synchronization techniques without complicated business logic getting in the way.
+FizzBuzz is traditionally a simple loop. Implementing it concurrently is usually "overkill" but serves as an excellent sandbox to learn advanced synchronization techniques without complicated business logic getting in the way.
 
 ### sync.Map
 The standard Go `map` is not safe for concurrent use, requiring a `sync.RWMutex`. In Go 1.9, the `sync.Map` type was introduced. 
